@@ -1,0 +1,6 @@
+.pnpm-store/
+.vscode/
+
+calender/node_modules/
+calender/.svelte-kit/
+calender/build/

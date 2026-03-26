@@ -10,6 +10,7 @@
 		resolve,
 		type Timetable
 	} from '@bkalendar/core';
+	import { parseWeekly } from '$lib/weekly';
 	import ErrorReport from './ErrorReport.svelte';
 	import OutputSelect from './OutputSelect.svelte';
 	import GapiOutputSection from './GapiOutputSection.svelte';
@@ -20,7 +21,12 @@
 	import OkeeButton from '$lib/OkeeButton.svelte';
 
 	let raw: string;
-	let kind: 'sinh viên 2024' | 'sinh viên' | 'giảng viên' | 'sau đại học' = 'sinh viên 2024';
+	let kind:
+		| 'sinh viên 2024'
+		| 'sinh viên'
+		| 'giảng viên'
+		| 'sau đại học'
+		| 'lịch tuần' = 'sinh viên 2024';
 	let output: 'ical' | 'gapi' = 'gapi';
 	let step: 'import' | 'export' = 'import';
 	let semester: number | undefined = undefined;
@@ -28,7 +34,7 @@
 	let name: string;
 
 	$: timetable = process(raw, kind);
-	$: if (semester !== undefined && !`${semester}`.match(/^\d+[123]$/)) {
+	$: if (kind != 'lịch tuần' && semester !== undefined && !`${semester}`.match(/^\d+[123]$/)) {
 		error = new Error('mã học kỳ sai định dạng. ví dụ mã đúng: 231, 232, 233.');
 	} else {
 		error = null;
@@ -50,6 +56,9 @@
 				break;
 			case 'sau đại học':
 				parse = parsePostgrad;
+				break;
+			case 'lịch tuần':
+				parse = parseWeekly;
 				break;
 		}
 		try {
@@ -74,6 +83,8 @@
 				return `GV${timetable.semester}`;
 			case 'sau đại học':
 				return `SDH${timetable.semester}`;
+			case 'lịch tuần':
+				return `WEEK-${timetable.startMondayUTC.toISOString().slice(0, 10)}`;
 		}
 	}
 
@@ -100,15 +111,17 @@
 		<div class="h-4" />
 		<PasteArea bind:raw />
 		<div class="h-4" />
-		<div class="flex items-center justify-end space-x-4">
-			<p class="flex-shrink-0">học kỳ</p>
-			<input
-				type="number"
-				class="inline w-16 outline-dashed outline-[1.5px] outline-slate-200 disabled:cursor-not-allowed disabled:bg-slate-100"
-				disabled={!timetable}
-				bind:value={semester}
-			/>
-		</div>
+		{#if kind != 'lịch tuần'}
+			<div class="flex items-center justify-end space-x-4">
+				<p class="flex-shrink-0">học kỳ</p>
+				<input
+					type="number"
+					class="inline w-16 outline-dashed outline-[1.5px] outline-slate-200 disabled:cursor-not-allowed disabled:bg-slate-100"
+					disabled={!timetable}
+					bind:value={semester}
+				/>
+			</div>
+		{/if}
 		<div class="h-4" />
 		<div class="flex justify-end">
 			<OkeeButton variant="navy" disabled={!timetable || !!error} on:click={nextStep} />

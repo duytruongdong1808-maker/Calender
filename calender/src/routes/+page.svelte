@@ -109,7 +109,7 @@
 			<Key>V</Key> thời khóa biểu của bạn vào bên dưới, mình sẽ tự trích lịch của bạn ra 🪄
 		</p>
 		<div class="h-4" />
-		<PasteArea bind:raw />
+		<PasteArea bind:raw {kind} />
 		<div class="h-4" />
 		{#if kind != 'lịch tuần'}
 			<div class="flex items-center justify-end space-x-4">

@@ -1,10 +1,10 @@
 {
-	"name": "@bkalendar/core",
-	"version": "24.1.0",
+	"name": "@nttu/calendar-core",
+	"version": "26.1.0",
 	"exports": "./mod.ts",
 	"$schema": "https://deno.land/x/deno@v1.36.3/cli/schemas/config-file.v1.json",
 	"tasks": {
-		"test": "deno test -A ./tests"
+		"test": "deno test -A ."
 	},
 	"imports": {
 		"@/": "./",

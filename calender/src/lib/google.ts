@@ -8,13 +8,23 @@ const CLIENT_ID: string =
 
 await initGapi();
 
-async function initGapi() {
-	gapi.load('client', async () => {
-		await gapi.client.init({
-			apiKey: API_KEY,
-			discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest']
+let initPromise: Promise<void> | null = null;
+
+function initGapi() {
+	initPromise ??= new Promise((resolve, reject) => {
+		gapi.load('client', async () => {
+			try {
+				await gapi.client.init({
+					apiKey: API_KEY,
+					discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest']
+				});
+				resolve();
+			} catch (error) {
+				reject(error);
+			}
 		});
 	});
+	return initPromise;
 }
 
 declare namespace google.accounts.oauth2 {
@@ -39,10 +49,8 @@ declare namespace google.accounts.oauth2 {
 const tokenClient = google.accounts.oauth2.initTokenClient({
 	client_id: CLIENT_ID,
 	scope: 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events',
-	// dummy
 	callback: () => {},
-	prompt: '',
-	hosted_domain: 'hcmut.edu.vn'
+	prompt: ''
 });
 
 function auth() {

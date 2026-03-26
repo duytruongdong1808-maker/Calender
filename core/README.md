@@ -1,12 +1,16 @@
-[![JSR](https://jsr.io/badges/@bkalendar/core)](https://jsr.io/@bkalendar/core)
+# @nttu/calendar-core
 
-# @bkalendar/core
+Core parser va formatter cho lich tuan NTTU.
 
-In an effort to transform HCMUT-VNU timetables to other formats, I made this package.
+Package nay hien tap trung vao:
 
-## Contributions
+- parse lich tuan NTTU
+- xuat Google Calendar event
+- xuat file `.ics`
 
-Pull requests are welcome! You can try add more tests, upgrade dependencies, find bugs, add new
-input, output format, ...
+## Nguon goc
 
-Whatever you do, please do try to keep the [changelog](./CHANGELOG.md) up-to-date.
+Module nay duoc tach va chinh sua tu codebase BKalendar goc, sau do thu gon de phu hop voi nhu cau NTTU.
+
+- Nguon goc: `BKalendar`
+- License goc: `MIT`

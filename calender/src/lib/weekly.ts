@@ -1,4 +1,4 @@
-import type { Timetable } from '@bkalendar/core';
+import { ParseError, TableNotFoundError, type Timerow, type Timetable } from '$lib/calendarCore';
 
 const DATE_RE = /^(\d{2})\/(\d{2})\/(\d{4})$/;
 const PERIOD_RE = /^Tiết:\s*(\d+)\s*-\s*(\d+)$/i;
@@ -32,7 +32,7 @@ function parseWeeklyTable(src: string): Timetable | null {
 	const eveningStart = findLineStart(normalized, 'Tối');
 	const footerStart = normalized.indexOf('Lịch học lý thuyết');
 
-	if ([headerStart, morningStart, afternoonStart, eveningStart, footerStart].some((v) => v == -1)) {
+	if ([headerStart, morningStart, afternoonStart, eveningStart, footerStart].some((value) => value == -1)) {
 		return null;
 	}
 
@@ -45,19 +45,25 @@ function parseWeeklyTable(src: string): Timetable | null {
 		return null;
 	}
 
-	const dates = headerCells.slice(1).map(extractDateFromCell).filter((d): d is Date => d != null);
+	const dates = headerCells.slice(1).map(extractDateFromCell).filter((date): date is Date => date != null);
 	if (dates.length != 7) {
+		return null;
+	}
+
+	const rows = [
+		...parseSectionCells(morningCells.slice(1), dates),
+		...parseSectionCells(afternoonCells.slice(1), dates),
+		...parseSectionCells(eveningCells.slice(1), dates)
+	];
+
+	if (rows.length == 0) {
 		return null;
 	}
 
 	return {
 		semester: fallbackSemester(dates[0]),
 		startMondayUTC: mondayOfWeek(dates[0]),
-		rows: [
-			...parseSectionCells(morningCells.slice(1), dates),
-			...parseSectionCells(afternoonCells.slice(1), dates),
-			...parseSectionCells(eveningCells.slice(1), dates)
-		]
+		rows
 	};
 }
 
@@ -67,30 +73,30 @@ function parseWeeklySequential(src: string): Timetable {
 	const scheduleStart = lines.findIndex((line) => line == 'Sáng' || line == 'Chiều' || line == 'Tối');
 
 	if (scheduleStart == -1) {
-		throw new Error('Cannot find weekly schedule section');
+		throw new TableNotFoundError(src);
 	}
 
 	const blocks = parseBlocks(lines.slice(scheduleStart));
 	if (blocks.length == 0) {
-		throw new Error('Cannot find any event in weekly schedule');
+		throw new TableNotFoundError(src);
 	}
 
 	const date = fromDdMmYyyy(selectedDate);
 	const weekday = jsDayToWeekday(date.getUTCDay());
-	const startMondayUTC = mondayOfWeek(date);
 
 	return {
 		semester: fallbackSemester(date),
-		startMondayUTC,
+		startMondayUTC: mondayOfWeek(date),
 		rows: blocks.map((block) => toTimerow(block, weekday))
 	};
 }
 
-function parseSectionCells(cells: string[], dates: Date[]) {
-	const rows: Timetable['rows'] = [];
+function parseSectionCells(cells: string[], dates: Date[]): Timerow[] {
+	const rows: Timerow[] = [];
 	for (let i = 0; i < Math.min(cells.length, dates.length); i++) {
 		const cell = cells[i].trim();
 		if (!cell) continue;
+
 		const weekday = jsDayToWeekday(dates[i].getUTCDay());
 		for (const block of parseCellBlocks(cell)) {
 			rows.push(toTimerow(block, weekday));
@@ -173,7 +179,7 @@ function parseCellBlocks(cell: string): ParsedBlock[] {
 		}
 
 		if (startPeriod === undefined || endPeriod === undefined || !location) {
-			throw new Error(`Cannot extract enough event details from weekly schedule: ${name}`);
+			throw new ParseError(name, 'Không đọc được đủ thông tin cho môn trong lịch tuần.');
 		}
 
 		blocks.push({
@@ -210,7 +216,7 @@ function findSelectedDate(lines: string[]): string {
 		}
 	}
 
-	throw new Error('Cannot find selected date');
+	throw new ParseError(lines[0] ?? '', 'Không tìm được ngày đang chọn.');
 }
 
 function parseBlocks(lines: string[]): ParsedBlock[] {
@@ -301,7 +307,7 @@ function parseBlocks(lines: string[]): ParsedBlock[] {
 		}
 
 		if (startPeriod === undefined || endPeriod === undefined || !location) {
-			throw new Error(`Cannot extract enough event details from weekly schedule: ${name}`);
+			throw new ParseError(name, 'Không đọc được đủ thông tin cho môn trong lịch tuần.');
 		}
 
 		blocks.push({
@@ -320,7 +326,7 @@ function parseBlocks(lines: string[]): ParsedBlock[] {
 	return blocks;
 }
 
-function toTimerow(block: ParsedBlock, weekday: number) {
+function toTimerow(block: ParsedBlock, weekday: number): Timerow {
 	const periodStart = hmFrom(block.startPeriod).startHm;
 	const periodEnd = hmFrom(block.endPeriod).endHm;
 	const startHm = block.examTime ?? periodStart;
@@ -359,30 +365,8 @@ function extractDateFromCell(cell: string): Date | null {
 
 function findLineStart(src: string, label: string): number {
 	if (src.startsWith(label)) return 0;
-	const idx = src.indexOf(`\n${label}`);
-	return idx == -1 ? -1 : idx + 1;
-}
-
-function hmFrom(period: number): { startHm: [number, number]; endHm: [number, number] } {
-	if (period == 0) {
-		return { startHm: [0, 0], endHm: [0, 0] };
-	}
-	if (period >= 1 && period <= 13) {
-		return { startHm: [period + 5, 0], endHm: [period + 5, 50] };
-	}
-	if (period == 14) {
-		return { startHm: [18, 50], endHm: [19, 40] };
-	}
-	if (period == 15) {
-		return { startHm: [19, 40], endHm: [20, 30] };
-	}
-	if (period == 16) {
-		return { startHm: [20, 30], endHm: [21, 20] };
-	}
-	if (period == 17) {
-		return { startHm: [21, 20], endHm: [22, 10] };
-	}
-	throw new Error(`Tiết must be less than 18: ${period}`);
+	const index = src.indexOf(`\n${label}`);
+	return index == -1 ? -1 : index + 1;
 }
 
 function looksLikeField(line: string): boolean {
@@ -408,25 +392,47 @@ function isFooter(line: string): boolean {
 function fromDdMmYyyy(src: string): Date {
 	const match = src.match(DATE_RE);
 	if (!match) {
-		throw new Error(`Invalid date format: ${src}`);
+		throw new ParseError(src, 'Sai định dạng ngày.');
 	}
 	return new Date(Date.UTC(Number(match[3]), Number(match[2]) - 1, Number(match[1])));
 }
 
-function mondayOfWeek(d: Date): Date {
-	const weekday = jsDayToWeekday(d.getUTCDay());
-	return new Date(+d - (weekday - 2) * 24 * 60 * 60 * 1000);
+function mondayOfWeek(date: Date): Date {
+	const weekday = jsDayToWeekday(date.getUTCDay());
+	return new Date(+date - (weekday - 2) * 24 * 60 * 60 * 1000);
 }
 
 function jsDayToWeekday(day: number): number {
 	return ((day + 6) % 7) + 2;
 }
 
-function fallbackSemester(d: Date): number {
-	const year = d.getUTCFullYear() % 100;
-	const month = d.getUTCMonth() + 1;
+function fallbackSemester(date: Date): number {
+	const year = date.getUTCFullYear() % 100;
+	const month = date.getUTCMonth() + 1;
 	const term = month <= 5 ? 2 : month <= 8 ? 3 : 1;
 	return year * 10 + term;
+}
+
+function hmFrom(period: number): { startHm: [number, number]; endHm: [number, number] } {
+	if (period == 0) {
+		return { startHm: [0, 0], endHm: [0, 0] };
+	}
+	if (period >= 1 && period <= 13) {
+		return { startHm: [period + 5, 0], endHm: [period + 5, 50] };
+	}
+	if (period == 14) {
+		return { startHm: [18, 50], endHm: [19, 40] };
+	}
+	if (period == 15) {
+		return { startHm: [19, 40], endHm: [20, 30] };
+	}
+	if (period == 16) {
+		return { startHm: [20, 30], endHm: [21, 20] };
+	}
+	if (period == 17) {
+		return { startHm: [21, 20], endHm: [22, 10] };
+	}
+	throw new ParseError(`${period}`, 'Tiết phải nhỏ hơn 18.');
 }
 
 function minutesBetween(start: [number, number], end: [number, number]): number {
@@ -434,7 +440,8 @@ function minutesBetween(start: [number, number], end: [number, number]): number 
 }
 
 function offsetHm(start: [number, number], deltaMinutes: number): [number, number] {
-	return [Math.trunc((start[0] * 60 + start[1] + deltaMinutes) / 60), (start[0] * 60 + start[1] + deltaMinutes) % 60];
+	const total = start[0] * 60 + start[1] + deltaMinutes;
+	return [Math.trunc(total / 60), total % 60];
 }
 
 function pad2(n: number): string {

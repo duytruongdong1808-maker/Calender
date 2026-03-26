@@ -2,11 +2,8 @@
 	import { normalizeWeeklyClipboardHtml } from '$lib/weeklyClipboard';
 
 	export let raw: string;
-	export let kind: string;
 
 	function handlePaste(event: ClipboardEvent) {
-		if (kind != 'lịch tuần') return;
-
 		const html = event.clipboardData?.getData('text/html');
 		if (!html) return;
 
@@ -21,6 +18,6 @@
 <textarea
 	bind:value={raw}
 	on:paste={handlePaste}
-	placeholder="📋 dán vào đây"
+	placeholder="Dan lich tuan NTTU vao day"
 	class="mt-5 h-32 w-full rounded bg-transparent p-2 text-xs placeholder-slate-400 outline-dashed outline-[1.5px] outline-slate-200 placeholder:text-center placeholder:text-base placeholder:font-light placeholder:leading-[7rem] focus:outline-slate-500"
 />

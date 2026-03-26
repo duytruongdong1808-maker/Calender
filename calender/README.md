@@ -1,9 +1,13 @@
-# BKalendar
+# NTTU Calendar
 
-Bring your timetable to Google Calendar. No hassle included.
+Web app de nhap lich tuan NTTU va xuat sang Google Calendar hoac file `.ics`.
 
-The main logic for parsing and transforming the timetables can be found at [core]. This repo is intended for the user-facing bits.
+Frontend duoc xay dung bang SvelteKit.
 
-[core]: https://github.com/bkalendar/core
+## Nguon goc
 
-Built with SvelteKit.
+Project nay la ban fork va chinh sua tu BKalendar.
+
+- Nguon goc: `BKalendar`
+- License goc: `MIT`
+- Huong chinh sua hien tai: toi gian hoa repo de phuc vu luong lich tuan NTTU

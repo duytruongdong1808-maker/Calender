@@ -1,21 +1,5 @@
-# Contributing Guides
+# Contributing
 
-## Unauthorized error when downloading `@bkalendar/core`
-
-To solve this issue, you need to be _authenticated_ to even read and download
-packages from the GitHub NPM Registry.
-
-1. Head over to https://github.com/settings/tokens, create a token with
-   only permission `read:packages`.
-2. Run this command:
-
-   ```console
-   $ npm login --registry=https://npm.pkg.github.com
-   ```
-
-3. Login with:
-
-   - Username: Your GitHub username
-   - Password: The token you created above
-
-`pnpm install` should now work fine.
+1. Chay `corepack pnpm install` trong thu muc `calender`.
+2. Dung `corepack pnpm run check` de kiem tra type va Svelte diagnostics.
+3. Dung `corepack pnpm run build` truoc khi push de chac chan ban build production van on.

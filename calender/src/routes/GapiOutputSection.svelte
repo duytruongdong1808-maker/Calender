@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { formatGapi, type Timetable } from '@bkalendar/core';
+	import { formatGapi, type Timetable } from '$lib/calendarCore';
 	import GapiPreview from './GapiPreview.svelte';
 	import H2 from '$lib/H2.svelte';
 	import RadioButton from '$lib/RadioButton.svelte';
@@ -9,7 +9,7 @@
 	export let timetable: Required<Timetable>;
 	export let name: string;
 	let mode: 'mono' | 'random' = 'random';
-	let seed: number = 0;
+	let seed = 0;
 	let ready = false;
 
 	$: events = colorEvents(timetable, mode, seed);
@@ -32,34 +32,34 @@
 			await gapi.auth();
 			const calendar = await gapi.createCalendar(name);
 			await gapi.addEventsToCalendar(events, calendar.id);
-			alert('Đã thêm lịch thành công');
-		} catch (e) {
-			console.error(e);
+			alert('Da them lich thanh cong');
+		} catch (error) {
+			console.error(error);
 		} finally {
 			ready = false;
 		}
 	}
 </script>
 
-<H2>🎨 màu sắc</H2>
+<H2>Mau sac</H2>
 
-<p>bạn là người chơi hệ:</p>
+<p>Ban muon bo lich theo kieu nao:</p>
 
 <div class="mt-4 flex justify-around text-base">
-	<RadioButton bind:group={mode} value="mono" variant="slate">🗿 tối giản</RadioButton>
-	<RadioButton bind:group={mode} value="random" variant="rose">💅 bảy sắc cầu vồng</RadioButton>
+	<RadioButton bind:group={mode} value="mono" variant="slate">Toi gian</RadioButton>
+	<RadioButton bind:group={mode} value="random" variant="rose">Nhieu mau</RadioButton>
 </div>
 
-<H2>😎 xem trước</H2>
-<p>cái lịch sẽ nhìn giống giống thế này:</p>
+<H2>Xem truoc</H2>
+<p>Lich Google se nhin gan nhu the nay:</p>
 <GapiPreview {events} />
 <div class="h-4" />
 <div class="flex justify-center">
 	{#if mode == 'random'}
-		<OkeeButton disabled={ready} variant="slate" on:click={() => seed++}>🎲 màu khác ik</OkeeButton>
+		<OkeeButton disabled={ready} variant="slate" on:click={() => seed++}>Mau khac</OkeeButton>
 		<div class="w-4" />
 	{/if}
 	<OkeeButton disabled={ready} variant="navy" on:click={callGapi}>
-		{!ready ? '👌 okee' : '🏃‍♂️ đang thêm...'}
+		{!ready ? 'Them vao Google Calendar' : 'Dang them...'}
 	</OkeeButton>
 </div>

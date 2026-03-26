@@ -1,0 +1,11 @@
+This repository contains modified work derived from BKalendar.
+
+Original project:
+- Name: BKalendar
+- License: MIT
+
+Current repository:
+- Purpose: NTTU weekly schedule import/export
+- Status: forked and modified version
+
+Please retain the original MIT license notice together with this attribution notice when redistributing substantial portions of this repository.

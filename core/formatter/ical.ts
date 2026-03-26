@@ -5,17 +5,11 @@ import { isUnresolvable } from "@/resolver.ts";
 
 const TIME_ZONE = "Asia/Ho_Chi_Minh";
 
-/**
- * transform calendar into ical format
- * @returns rfc5545 compilant ical calendar
- */
 export function formatIcal(timetable: Required<Timetable>): string {
 	const arr = [
 		"BEGIN:VCALENDAR",
-		"PRODID:-//bkalendar//BKalendar//VI",
+		"PRODID:-//nttu-calendar//Weekly Schedule//VI",
 		"VERSION:2.0",
-		// below is vtimezone component
-		// taken from: https://github.com/touch4it/ical-timezones/blob/master/lib/zones/Asia/Ho_Chi_Minh.ics
 		"BEGIN:VTIMEZONE",
 		"TZID:Asia/Ho_Chi_Minh",
 		"TZURL:http://tzurl.org/zoneinfo-outlook/Asia/Ho_Chi_Minh",
@@ -26,7 +20,7 @@ export function formatIcal(timetable: Required<Timetable>): string {
 		"TZNAME:+07",
 		"DTSTART:19700101T000000",
 		"END:STANDARD",
-		"END:VTIMEZONE",
+		"END:VTIMEZONE"
 	];
 
 	for (const timerow of timetable.rows) {
@@ -45,42 +39,32 @@ function formatTimerow(tr: Timerow, startMondayUTC: Date) {
 	const recurrence = icalRrule(tr, startMondayUTC, true);
 	return [
 		"BEGIN:VEVENT",
-		`UID:${crypto.randomUUID()}@bkalendar`,
+		`UID:${crypto.randomUUID()}@nttu-calendar`,
 		`DTSTAMP:${formatUTC(new Date())}`,
-		// info
-		`SUMMARY:${tr.name}`,
-		`DESCRIPTION:${Object.entries(tr.extras).map((e) => e.join(": ")).join("\n")}`,
-		`LOCATION:${tr.location}`,
-		// time
-		`DTSTART;TZID=${TIME_ZONE}:${
-			formatHCM(dateOfIndex(start, tr.startHm, startMondayUTC, tr.weekday))
-		}`,
-		`DTEND;TZID=${TIME_ZONE}:${
-			formatHCM(dateOfIndex(start, tr.endHm, startMondayUTC, tr.weekday))
-		}`,
+		`SUMMARY:${escapeIcal(tr.name)}`,
+		`DESCRIPTION:${escapeIcal(Object.entries(tr.extras).map((e) => e.join(": ")).join("\n"))}`,
+		`LOCATION:${escapeIcal(tr.location)}`,
+		`DTSTART;TZID=${TIME_ZONE}:${formatHCM(dateOfIndex(start, tr.startHm, startMondayUTC, tr.weekday))}`,
+		`DTEND;TZID=${TIME_ZONE}:${formatHCM(dateOfIndex(start, tr.endHm, startMondayUTC, tr.weekday))}`,
 		...recurrence,
-		"END:VEVENT",
+		"END:VEVENT"
 	];
 }
 
-/**
- * generate rrule with UNTIL and EXDATE rule
- */
 export function icalRrule(
 	{ weekday, startHm, weeks }: Timerow,
 	startMondayUTC: Date,
-	multiline = false,
+	multiline = false
 ): string[] {
 	const start = weeks.findIndex(Boolean);
 	const end = weeks.findLastIndex(Boolean);
 
-	// if only one event, no rrule needed
 	if (start == end) {
 		return [];
 	}
-	// UNTIL only accepts utc datetime...
+
 	const rrules: string[] = [
-		`RRULE:FREQ=WEEKLY;UNTIL=${formatUTC(dateOfIndex(end, startHm, startMondayUTC, weekday))}`,
+		`RRULE:FREQ=WEEKLY;UNTIL=${formatUTC(dateOfIndex(end, startHm, startMondayUTC, weekday))}`
 	];
 
 	const excludes = [];
@@ -92,11 +76,7 @@ export function icalRrule(
 	if (excludes.length != 0) {
 		if (!multiline) {
 			rrules.push(
-				`EXDATE;TZID=${ASIA_HO_CHI_MINH}:${
-					excludes.map((ex) => formatHCM(dateOfIndex(ex, startHm, startMondayUTC, weekday))).join(
-						",",
-					)
-				}`,
+				`EXDATE;TZID=${ASIA_HO_CHI_MINH}:${excludes.map((ex) => formatHCM(dateOfIndex(ex, startHm, startMondayUTC, weekday))).join(",")}`
 			);
 		} else {
 			rrules.push(`EXDATE;TZID=${ASIA_HO_CHI_MINH}`);
@@ -107,4 +87,8 @@ export function icalRrule(
 		}
 	}
 	return rrules;
+}
+
+function escapeIcal(value: string): string {
+	return value.replaceAll("\\", "\\\\").replaceAll("\n", "\\n").replaceAll(";", "\\;").replaceAll(",", "\\,");
 }

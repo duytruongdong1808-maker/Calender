@@ -1,5 +1,5 @@
 {
-	"name": "bkalendar.github.io",
+	"name": "nttu-calendar-web",
 	"version": "0.0.1",
 	"scripts": {
 		"dev": "vite dev",
@@ -12,7 +12,6 @@
 		"format": "prettier --write --plugin prettier-plugin-svelte --plugin prettier-plugin-tailwindcss ."
 	},
 	"devDependencies": {
-		"@bkalendar/core": "npm:@jsr/bkalendar__core@^24.1.0",
 		"@fontsource/arimo": "^5.0.17",
 		"@sveltejs/adapter-static": "^2.0.3",
 		"@sveltejs/kit": "^1.27.1",
